@@ -1,0 +1,37 @@
+services:
+  # Capa de Datos (Persistencia)
+  db:
+    image: postgres:15
+    container_name: db_asistencia
+    restart: always
+    environment:
+      POSTGRES_DB: asistencia_db
+      POSTGRES_USER: user_p3
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - ./db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - db_data:/var/lib/postgresql/data # Garantiza que los datos no se borren
+
+  # Capa Web (Frontend - PHP)
+  web:
+    build: ./web
+    container_name: web_asistencia
+    ports:
+      - "8080:80"
+    volumes:
+      - ./web:/var/www/html
+      - ./shared:/var/www/html/reports # Volumen compartido para leer el reporte
+    depends_on:
+      - db
+
+  # Capa Lógica (Backend - Python)
+  logic:
+    build: ./logic
+    container_name: python_logic
+    volumes:
+      - ./shared:/app/reports # Volumen compartido para escribir el reporte
+    depends_on:
+      - db
+
+volumes:
+  db_data: # Definición del volumen para persistencia de PostgreSQL
